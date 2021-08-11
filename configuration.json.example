@@ -1,0 +1,8 @@
+{
+	"ip": "x.y.z.w",//Aircon API addr
+	"ip_broadcast": "v.a.b.c",//Broadcast address in your subnet. If your mask is 255.255.255.0, likely it will be x.y.z.255
+	"user": "username",
+	"pass": "userpass",
+	"secret_key": "digest_secret", //Secret for digest authentication
+	"debug": false//Debug mode in Flask
+}
