@@ -67,34 +67,41 @@ def encrypt_generic(pack):
     return encrypt(pack, GENERIC_KEY)
 
 def device_configuration(ip: str) -> dict:
-    s = socket.socket(type=socket.SOCK_DGRAM, proto=socket.IPPROTO_UDP)
-    s.settimeout(5)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    s.sendto(b'{"t":"scan"}', (config["ip_broadcast"], 7000))
-    device_config = None
-    try:
-        (data, address) = s.recvfrom(1024)
-        if len(data) == 0:
-            return device_config
-        resp = json.loads(data[0:data.rfind(b"}") + 1])
-        pack = json.loads(decrypt_generic(resp['pack']))
-        device_config = {"cid": pack['cid']}
-    except:
-        pass
-    pack = '{"mac":"%s","t":"bind","uid":0}' % device_config["cid"]
-    pack_encrypted = encrypt_generic(pack)
+    device_config = {}
+    if not ("cid" in config.keys()):
+        s = socket.socket(type=socket.SOCK_DGRAM, proto=socket.IPPROTO_UDP)
+        s.settimeout(5)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.sendto(b'{"t":"scan"}', (config["ip_broadcast"], 7000))
+        device_config = None
+        try:
+            (data, address) = s.recvfrom(1024)
+            if len(data) == 0:
+                return device_config
+            resp = json.loads(data[0:data.rfind(b"}") + 1])
+            pack = json.loads(decrypt_generic(resp['pack']))
+            device_config["cid"] = pack['cid']
+        except:
+            pass
+    else:
+        device_config["cid"] = config["cid"]
 
-    request = create_request(device_config['cid'], pack_encrypted, 1)
-    result = send_data(ip, 7000, bytes(request, encoding='utf-8'))
-    response = json.loads(result)
-    if response["t"] == "pack":
-        pack = response["pack"]
-        pack_decrypted = decrypt_generic(pack)
-        bind_resp = json.loads(pack_decrypted)
-        if bind_resp["t"] == "bindok":
-            key = bind_resp['key']
-    device_config["key"] = key
+    if not ("key" in config.keys()):
+        pack = '{"mac":"%s","t":"bind","uid":0}' % device_config["cid"]
+        pack_encrypted = encrypt_generic(pack)
+        request = create_request(device_config['cid'], pack_encrypted, 1)
+        result = send_data(ip, 7000, bytes(request, encoding='utf-8'))
+        response = json.loads(result)
+        if response["t"] == "pack":
+            pack = response["pack"]
+            pack_decrypted = decrypt_generic(pack)
+            bind_resp = json.loads(pack_decrypted)
+            if bind_resp["t"] == "bindok":
+                key = bind_resp['key']
+        device_config["key"] = key
+    else:
+        device_config["key"] = config["key"]
     return device_config
 
 def get_device_params(dev_config: dict) -> dict:
@@ -159,7 +166,4 @@ if __name__ == "__main__":
     with open(config_file, "r") as fconf:
         config = json.loads(fconf.read())
         app.config["SECRET_KEY"] = config["secret_key"]
-    app.run(host="0.0.0.0", port=8050, debug=config["debug"])
-    #devc = device_configuration(config["ip"])
-    #dparams = get_device_params(devc)
-    #set_device_params(devc, dparams)
+    app.run(host="0.0.0.0", port=config["port"], debug=config["debug"])

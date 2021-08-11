@@ -1,0 +1,10 @@
+{
+	"ip": "192.168.88.188",
+	"ip_broadcast": "192.168.88.255",
+	"user": "player999",
+	"pass": "os&2^XIL&Frx",
+	"secret_key": "M@eywprZq21I",
+	"debug": false,
+	"port": 8060,
+	"cid": "f4911e3158db"
+}
